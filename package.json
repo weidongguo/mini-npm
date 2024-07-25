@@ -1,0 +1,13 @@
+{
+  "name": "mini-npm",
+  "version": "1.0.0",
+  "description": "It's a mini version of npm as a interview exercise",
+  "scripts": {
+    "test": "node --test --test-reporter spec"
+  },
+  "keywords": [
+    "mini-npm"
+  ],
+  "author": "Wayne Guo",
+  "type": "module"
+}
