@@ -3,11 +3,15 @@
   "version": "1.0.0",
   "description": "It's a mini version of npm as a interview exercise",
   "scripts": {
-    "test": "node --test --test-reporter spec"
+    "test": "node --test --test-reporter spec tests"
   },
   "keywords": [
     "mini-npm"
   ],
   "author": "Wayne Guo",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "semver": "7.6.3",
+    "tar": "7.4.2"
+  }
 }
