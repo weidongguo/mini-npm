@@ -28,11 +28,25 @@ function deriveFilenameFromUrl(url) {
   return chunks[chunks.length-1];
 }
 
-function download(url, destination, shasum) {
+/**
+ * 
+ * @param {*} url 
+ * @param {*} destination 
+ * @param {*} shasum 
+ * @returns Promise resolves to true if downloaded. False if we're reusing the cache. Rejects if any error occurs
+ */
+async function download(url, destination, shasum) {
+  // Check if it's already downloaded
+  if(downloader.isDownloaded(destination)) {
+    console.log("Found cached package for", destination)
+    return true 
+  }
+
   return downloader.addTask(url, destination).then((sha1sum) => {
     if(sha1sum != shasum) {
       return Promise.reject(`${destination} is downloaded but it's corrupted`);
     }
+    return false
   })
 }
 
@@ -61,7 +75,11 @@ async function main() {
     const destination = `${outputDirectory}/${filename}`
 
     download(url, destination, shasum)
-      .then(async () => {
+      .then(async (wasCached) => {
+        if(wasCached) {
+          // if it was cached already, no need to expand
+          return
+        }
         await expand(destination, outputDirectory)
         remove(destination) // remove archive after it's exapnded
       })
