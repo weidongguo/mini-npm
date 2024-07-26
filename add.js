@@ -25,7 +25,7 @@ function getCommandLineArgument() {
  */
 function getPackageNameFromCommandLine() {
   const argument = getCommandLineArgument();
-  return Utils.parseCommandLineArgumentForPackageNameAndVersion(argument) ;
+  return Utils.parseForPackageNameAndVersion(argument) ;
 }
 
 /**

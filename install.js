@@ -1,20 +1,18 @@
 import registry from './lib/registry.js';
 import downloader from './lib/downloader.js';
-import Recipe from './lib/recipe.js';
+import recipe from './lib/recipe.js';
 import Utils from './lib/utils.js';
-import fs from 'node:fs';
 
 const INSTALLATION_DIRECTORY = "./node_modules2"
 
 /**
  * Get all download URLs of the dependencies defined
- * in the recipe, package.json.
- * 
- * @returns {Object} obj
- *  obj['<package@version>'] = { url, shasum }
+ * in the recipe (i.e. package.json) as well as their dependencies'
+ *
+ * @returns {Promise<Object<string, { url: string, shasum: string }>>} Resolves to a dictionary of URLs
  */
-async function getAllDependenciesUrls() {
-  const dependencies = Recipe.getDependencies();
+async function getAllDependenciesUrlsPerRecipe() {
+  const dependencies = recipe.getDependencies();
   const urls = {}
   for(const name in dependencies) {
     const version = dependencies[name];
@@ -23,70 +21,65 @@ async function getAllDependenciesUrls() {
   return urls;
 }
 
-function deriveFilenameFromUrl(url) {
-  const chunks = url.split("/")
-  return chunks[chunks.length-1];
-}
-
 /**
- * 
- * @param {*} url 
- * @param {*} destination 
- * @param {*} shasum 
- * @returns Promise resolves to true if downloaded. False if we're reusing the cache. Rejects if any error occurs
+ * Download the archive specified by the URL. It's no-op if it was already downloaded.
+ * @param {string} url The remote URL for fetching the archive 
+ * @param {string} destination Where to store the downloaded archive
+ * @param {string} shasum Expected sha1 sum of the archive
+ * @returns Promise resolves to true if newly downloaded. False if no-op due to cache. Rejects if any error occurs
  */
-async function download(url, destination, shasum) {
+async function downloadIfNotCached(url, destination, shasum) {
   // Check if it's already downloaded
   if(downloader.isDownloaded(destination)) {
     console.log("Found cached package for", destination)
-    return true 
+    return true
   }
 
   return downloader.addTask(url, destination).then((sha1sum) => {
     if(sha1sum != shasum) {
       return Promise.reject(`${destination} is downloaded but it's corrupted`);
     }
+    console.log(`Downloaded ${destination}`)
     return false
   })
 }
 
-async function expand(tgzPath, outputDirectory) {
-  return Utils.unpackTgz(tgzPath, outputDirectory) 
-}
-
-async function remove(path) {
-  fs.unlink(path, (err) => {
-    if(err) {
-      console.error(`Failed to remove ${path}`, err);
-    }
-  });    
-}
-
-async function main() {
+/**
+ * Download all packages specified in the urls collection
+ * @param {Object<string, { url: string, shasum: string }>} urls 
+ */
+async function batchDownload(urls) {
   await Utils.createDirectoryIfDoestNotExist(INSTALLATION_DIRECTORY);
-  const urls = await getAllDependenciesUrls();  
 
   for(const fullyQualifiedPackage in urls) {
     const { url, shasum } = urls[fullyQualifiedPackage];
-    const { name } = Utils.parseCommandLineArgumentForPackageNameAndVersion(fullyQualifiedPackage); 
+    const { name } = Utils.parseForPackageNameAndVersion(fullyQualifiedPackage); 
     const outputDirectory = `${INSTALLATION_DIRECTORY}/${name}`
     await Utils.createDirectoryIfDoestNotExist(outputDirectory);
-    const filename = deriveFilenameFromUrl(url);
+    const filename = Utils.deriveFilenameFromUrl(url);
     const destination = `${outputDirectory}/${filename}`
 
-    download(url, destination, shasum)
+    downloadIfNotCached(url, destination, shasum)
       .then(async (wasCached) => {
-        if(wasCached) {
-          // if it was cached already, no need to expand
+        if(wasCached){
+          // If reusing cache, no subsequent operation is needed
           return
         }
-        await expand(destination, outputDirectory)
-        remove(destination) // remove archive after it's exapnded
+
+        // Otherwise, it's newly downloaded. Unpack the archive and then remove it.
+        await Utils.unpackTgz(destination, outputDirectory);
+        Utils.removeFile(destination)
       })
       .catch((err) => {
         console.error(err)
       });
   }
+}
+
+async function main() {
+  const urls = await getAllDependenciesUrlsPerRecipe();  
+  console.table(urls)
+  return batchDownload(urls);
 }
 
 main();
