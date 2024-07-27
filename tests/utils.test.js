@@ -33,9 +33,7 @@ describe("Test Utils", () => {
   })
 
   it('normalizeVersionRange', () => {
-    assert.deepEqual(Utils.normalizeVersionRange("npm:wrap-ansi@^7.0.0"), '^7.0.0');
-    assert.deepEqual(Utils.normalizeVersionRange("npm:string-width@^4.2.0"), '^4.2.0');
-    assert.deepEqual(Utils.normalizeVersionRange("^7.0.0"), '^7.0.0');
-    assert.deepEqual(Utils.normalizeVersionRange("npm@^7.0.0"), '^7.0.0');
+    assert.deepEqual(Utils.normalizeVersionRange('wrap-ansi-cli', "npm:wrap-ansi@^7.0.0"), { normalizedName: 'wrap-ansi', normalizedVersionRange: '^7.0.0'});
+    assert.deepEqual(Utils.normalizeVersionRange('wrap-ansi-cli', "wrap-ansi@^7.0.0"), { normalizedName: 'wrap-ansi', normalizedVersionRange: '^7.0.0'});
   });
 });

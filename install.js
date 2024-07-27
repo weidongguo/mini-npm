@@ -28,7 +28,7 @@ async function getAllDependenciesUrlsPerRecipe() {
  * @param {string} url The remote URL for fetching the archive 
  * @param {string} destination Where to store the downloaded archive
  * @param {string} shasum Expected sha1 sum of the archive
- * @returns Promise resolves to true if newly downloaded. False if no-op due to cache. Rejects if any error occurs
+ * @returns Promise resolves to false if newly downloaded. true if no-op due to cache. Rejects if any error occurs
  */
 async function downloadIfNotCached(url, destination, shasum) {
   // Check if it's already downloaded
@@ -51,36 +51,37 @@ async function downloadIfNotCached(url, destination, shasum) {
 async function batchDownload(urls) {
   await Utils.createDirectoryIfDoestNotExist(INSTALLATION_DIRECTORY);
 
-  for(const fullyQualifiedPackage in urls) {
-    const { url, shasum } = urls[fullyQualifiedPackage];
-    const { name } = Utils.parseForPackageNameAndVersion(fullyQualifiedPackage); 
-    const outputDirectory = `${INSTALLATION_DIRECTORY}/${name}`
-    await Utils.createDirectoryIfDoestNotExist(outputDirectory);
-    const filename = Utils.deriveFilenameFromUrl(url);
-    const destination = `${outputDirectory}/${filename}`
+  const promises = Object.entries(urls).map(async ([fullyQualifiedPackage, metadata]) => {
+      const { url, shasum } = metadata;
+      const { name } = Utils.parseForPackageNameAndVersion(fullyQualifiedPackage); 
+      const outputDirectory = `${INSTALLATION_DIRECTORY}/${name}`
+      await Utils.createDirectoryIfDoestNotExist(outputDirectory);
+      const filename = Utils.deriveFilenameFromUrl(url);
+      const destination = `${outputDirectory}/${filename}`
 
-    downloadIfNotCached(url, destination, shasum)
-      .then(async (wasCached) => {
-        if(wasCached){
-          // If reusing cache, no subsequent operation is needed
-          console.log(`Found cached package for ${fullyQualifiedPackage}`);
-          return
-        }
-        
-        console.log(`Downloaded ${fullyQualifiedPackage}`)
+      return downloadIfNotCached(url, destination, shasum)
+        .then(async (wasCached) => {
+          if(wasCached){
+            // If reusing cache, no subsequent operation is needed
+            console.log(`Found cached package for ${fullyQualifiedPackage}`);
+            return
+          }
+          
+          console.log(`Downloaded ${fullyQualifiedPackage}`)
 
-        // Otherwise, it's newly downloaded. Unpack the archive and then remove it.
-        await Utils.unpackTgz(destination, outputDirectory);
-        Utils.removeFile(destination)
-      })
-      .catch((err) => {
-        console.error(err)
-      });
-  }
+          // Otherwise, it's newly downloaded. Unpack the archive and then remove it.
+          await Utils.unpackTgz(destination, outputDirectory);
+          Utils.removeFile(destination)
+        });
+  });
+
+  // Parallel downloading
+  return Promise.all(promises);
 }
 
 async function main() {
   try {
+    console.log("Retrieving metadata for dependencies...");
     const urls = await getAllDependenciesUrlsPerRecipe();  
 
     // Show packages that we're about to download as a table
@@ -88,7 +89,9 @@ async function main() {
       console.table(urls)
     }
 
+    console.log("Start downloading dependencies...")
     await batchDownload(urls);
+    console.log("All dependencies downloaded")
   } catch (err) {
     console.error(err);
   }
