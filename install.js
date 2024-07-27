@@ -1,9 +1,11 @@
+#!/usr/bin/env node
+
 import registry from './lib/registry.js';
 import downloader from './lib/downloader.js';
 import recipe from './lib/recipe.js';
 import Utils from './lib/utils.js';
 
-const INSTALLATION_DIRECTORY = "./node_modules2"
+const INSTALLATION_DIRECTORY = "./node_modules"
 
 /**
  * Get all download URLs of the dependencies defined

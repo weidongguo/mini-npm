@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import registry from './lib/registry.js';
 import Recipe from './lib/recipe.js';
 import Utils from './lib/utils.js'

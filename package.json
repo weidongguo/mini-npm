@@ -13,5 +13,9 @@
   "dependencies": {
     "semver": "7.6.3",
     "tar": "7.4.2"
+  },
+  "bin": {
+    "mini-npm-install": "install.js",
+    "mini-npm-add": "add.js"
   }
 }

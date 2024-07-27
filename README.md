@@ -1,24 +1,43 @@
 # mini-npm
-This mini npm is not meant to be perfect as it's more like an exercise for how it can be implemented.
+This mini npm is not meant to be perfect as it's more like an exercise for how a node package manager can be implemented.
 
-It supports the basic feature of adding a package to the package.json file's dependency. And then installing the dependencies
-based on what's specified in package.json
+It supports the basic feature of adding a dependency to the package reciple (i.e. `package.json`). And then installing the dependencies
+based on what's specified in recipe.
 
-## Implemented features
+## Installation
+To install this package as executable in your OS, run
+```
+npm link
+```
+at this project's directory. This will make the executable `mini-npm-add` and `mini-npm-install` available to used globally
+in your OS.
+
+
+## Use Cases
 ### Basic
 #### Add
 To add a dependecy to the recipe (i.e. package.json), run
 ```
-node add <depedencyName>[@version]
+mini-npm-add <depedencyName>[@version]
 ```
-For example, `node add is-thirteen@2.0.0`
+For example, `mini-npm-add is-thirteen@2.0.0`
 
-If version is omitted, it will add the latest one. For example, `node add is-thirteen`
+If version is omitted, it will add the latest one. For example, `mini-npm-add add is-thirteen`
+
+After running the command above, you should expect a `package.json` generated
+by content similar to 
+```
+{
+  "dependencies": {
+    "is-thirteen": "2.0.0"
+  }
+}
+```
 
 #### Install
 To install the dependencies as specified in the recipe, run
 ```
-node install
+mini-npm-install
 ```
 
 ### Advanced
@@ -38,7 +57,7 @@ node install
       * There's a package.json in that directory
     * I implemented the same for our mini-npm
 
-### TODO
+### Future Improvements
 * Dependency conflict resolution: what happens if two dependencies require different versions of another dependency?
 
 * Lock file: How can you make sure that installs are deterministic?
