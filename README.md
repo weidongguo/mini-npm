@@ -7,6 +7,7 @@ based on what's specified in recipe.
 ## Installation
 To install this package as executable in your OS, run
 ```
+npm install
 npm link
 ```
 at this project's directory. This will make the executable `mini-npm-add` and `mini-npm-install` available to used globally

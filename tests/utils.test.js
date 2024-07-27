@@ -31,4 +31,11 @@ describe("Test Utils", () => {
     assert.deepEqual(Utils.deriveFilenameFromUrl(''), '');
     assert.deepEqual(Utils.deriveFilenameFromUrl('abcd/efg'), 'efg');
   })
+
+  it('normalizeVersionRange', () => {
+    assert.deepEqual(Utils.normalizeVersionRange("npm:wrap-ansi@^7.0.0"), '^7.0.0');
+    assert.deepEqual(Utils.normalizeVersionRange("npm:string-width@^4.2.0"), '^4.2.0');
+    assert.deepEqual(Utils.normalizeVersionRange("^7.0.0"), '^7.0.0');
+    assert.deepEqual(Utils.normalizeVersionRange("npm@^7.0.0"), '^7.0.0');
+  });
 });

@@ -16,10 +16,10 @@ const INSTALLATION_DIRECTORY = "./node_modules"
 async function getAllDependenciesUrlsPerRecipe() {
   const dependencies = recipe.getDependencies();
   const urls = {}
-  for(const name in dependencies) {
-    const version = dependencies[name];
-    await registry.getPackageAndItsDependenciesDownloadURLs(name, version, urls);
-  }
+
+  const promises = Object.entries(dependencies).map(([name, version]) => registry.getPackageAndItsDependenciesDownloadURLs(name, version, urls));
+  await Promise.all(promises);
+
   return urls;
 }
 
@@ -33,7 +33,6 @@ async function getAllDependenciesUrlsPerRecipe() {
 async function downloadIfNotCached(url, destination, shasum) {
   // Check if it's already downloaded
   if(downloader.isDownloaded(destination)) {
-    console.log("Found cached package for", destination)
     return true
   }
 
@@ -41,7 +40,6 @@ async function downloadIfNotCached(url, destination, shasum) {
     if(sha1sum != shasum) {
       return Promise.reject(`${destination} is downloaded but it's corrupted`);
     }
-    console.log(`Downloaded ${destination}`)
     return false
   })
 }
@@ -65,8 +63,11 @@ async function batchDownload(urls) {
       .then(async (wasCached) => {
         if(wasCached){
           // If reusing cache, no subsequent operation is needed
+          console.log(`Found cached package for ${fullyQualifiedPackage}`);
           return
         }
+        
+        console.log(`Downloaded ${fullyQualifiedPackage}`)
 
         // Otherwise, it's newly downloaded. Unpack the archive and then remove it.
         await Utils.unpackTgz(destination, outputDirectory);
@@ -79,9 +80,18 @@ async function batchDownload(urls) {
 }
 
 async function main() {
-  const urls = await getAllDependenciesUrlsPerRecipe();  
-  console.table(urls)
-  return batchDownload(urls);
+  try {
+    const urls = await getAllDependenciesUrlsPerRecipe();  
+
+    // Show packages that we're about to download as a table
+    if(Object.entries(urls).length > 0) {
+      console.table(urls)
+    }
+
+    await batchDownload(urls);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 main();
